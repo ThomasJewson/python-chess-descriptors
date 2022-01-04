@@ -7,43 +7,105 @@ import chess
 # %%
 class move_descriptors:
     def __init__(self, opening_key_loc="opening_dict.json") -> None:
+        """Inits the class.
+
+        Args:
+            opening_key_loc (str, optional): Specifies location of the opening dictionary for opening parsing. Defaults to "opening_dict.json".
+        """
 
         opening_key = pd.read_json(opening_key_loc)
         opening_key["list_moves"] = opening_key["clean_moves"].str.split(" ")
         self.opening_key = opening_key
 
-    def first_move(self, moves):
+    def first_move(self, moves: str):
+        """Extracts the first move
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            str: first move
+        """
         return moves.split(" ")[0]
 
-    def game_length(self, moves):
+    def game_length(self, moves: str):
+        """Calculates number of moves in game
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            int: number of moves in game
+        """
         return len(moves.split(" "))
 
-    def sum_OO(self, moves):
+    def sum_OO(self, moves: str):
+        """Number of times king-side castling occurred in game
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            int: number of times there was "O-O" within string
+        """
         return moves.split(" ").count("O-O")
 
-    def sum_OOO(self, moves):
+    def sum_OOO(self, moves: str):
+        """Number of times queen-side castling occurred in game
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            int: number of times there was "O-O-O" within string
+        """
         return moves.split(" ").count("O-O-O")
 
-    def both_castled(self, moves):
+    def both_castled(self, moves: str):
+        """Have both players castled?
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            bool: have both players castled
+        """
         moves = moves.split(" ")
         castle_sum = 0
         castle_sum += moves.count("O-O-O")
-        castle_sum += moves.count("O-O-O")
+        castle_sum += moves.count("O-O")
         if castle_sum == 2:
             return True
         else:
             return False
 
-    def opposite_castle(self, moves):
+    def opposite_castle(self, moves: str):
+        """Have players castled on opposite side of the board?
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            bool: have both players castled on opposite side?
+        """
+
         moves = moves.split(" ")
-        black_side = moves.count("O-O-O")
-        white_side = moves.count("O-O-O")
-        if black_side == 1 and white_side == 1:
+        queen_side = moves.count("O-O-O")
+        king_side = moves.count("O-O")
+        if queen_side == 1 and king_side == 1:
             return True
         else:
             return False
 
-    def num_of_turns_queens_on_board(self, moves):
+    def num_of_turns_queens_on_board(self, moves: str):
+        """Number of turns queens are on board
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            int: Number of turns queens are on board
+        """
         board = chess.Board()
         moves = moves.split(" ")
         queen_list = np.zeros(len(moves), dtype=bool)
@@ -58,6 +120,17 @@ class move_descriptors:
         return len(queen_list.nonzero()[0])
 
     def get_opening(self, moves):
+        """Parses opening and returns descriptors based off them
+
+        These include: ECO code, opening name, opening type (flank, closed ...etc), and opening moves
+
+        Args:
+            moves (str): string of moves eg: "Nh3 d5 g3 e5"
+
+        Returns:
+            pd.DataFrame: descriptors for ECO code, opening name, opening type, and opening moves
+        """
+
         def is_move_same(openings, move, move_number):
             valid_openings = np.ones(len(openings), dtype=bool)
             for index, opening_moves in openings["list_moves"].iteritems():
