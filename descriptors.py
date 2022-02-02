@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import chess
+from seaborn.matrix import heatmap
 
 
 # %%
@@ -171,7 +172,92 @@ class move_descriptors:
 
 
 # %%
-# dataset = pd.read_csv(R"demo_dataset.csv")
+class heatmaps:
+    BOARD_SIZE = 8
 
-# mv = move_descriptors()
-# dataset["moves"].apply(lambda moves: mv.get_opening(moves))
+    def __init__(self, moves) -> None:
+        self.moves = moves.split(" ")
+
+    def board_to_array(board, pieces=None):
+        """[summary]
+
+        Args:
+            board (chess.Board): chess.Board object.
+            pieces (list, optional): Specify what pieces w.r.t. FEN definitions eg: ["P","k","K"]. Defaults to all pieces.
+
+        Returns:
+            np.array: returns 2D array of position
+        """
+        fen = board.fen().split(" ")[0]
+        fen = fen.split("/")
+        bs = heatmaps.BOARD_SIZE
+        out_row = np.zeros(shape=(bs, bs), dtype=int)
+
+        if not pieces:
+            pieces = [
+                "r",
+                "n",
+                "b",
+                "q",
+                "k",
+                "b",
+                "n",
+                "r",
+                "p",
+                "R",
+                "N",
+                "B",
+                "Q",
+                "K",
+                "B",
+                "N",
+                "R",
+                "P",
+            ]
+
+        for row in range(bs):
+            fen_row = fen[row]
+
+            square_num = 0
+            for letter in fen_row:
+                if letter.isnumeric():
+                    square_num += int(letter)
+                elif letter in pieces:
+                    out_row[row, square_num] = 1
+                    square_num += 1
+                else:
+                    square_num += 1
+
+        return out_row
+
+    def move_array_board(self, pieces=None):
+        """Calculates all the 2D position arrays for every move in a game
+
+        Args:
+            pieces (list, optional): Specify what pieces w.r.t. FEN definitions eg: ["P","k","K"]. Defaults to all pieces.
+
+        Returns:
+            np.array: returns 3D array of all positions in game
+        """
+        moves = self.moves
+        bs = heatmaps.BOARD_SIZE
+        # game = np.zeros(shape=bs)
+        game = []
+        board = chess.Board()
+        for move_number, move in enumerate(moves):
+            board.push_san(move)
+            # game[move_number] = board_to_array(board,pieces = pieces)
+            game.append(heatmaps.board_to_array(board, pieces=pieces))
+        return np.dstack(game)
+
+    def heatmap(self, pieces=None):
+        arr = heatmap.move_array_board(pieces=pieces)
+        AXIS = 2
+        return arr.sum(axis=AXIS) / arr.shape[AXIS]
+
+
+# %%
+# import seaborn as sns
+# dataset = pd.read_csv(R"demo_dataset.csv")
+# out = dataset["moves"].apply(lambda moves: heatmaps(moves).heatmap(pieces=["P","p"]))
+# sns.heatmap(np.mean(np.dstack(out.values),axis=2))
